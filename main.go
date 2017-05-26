@@ -16,18 +16,16 @@ func main() {
 	log.SetPrefix("switchgen: ")
 	log.SetFlags(0)
 
-	var (
-		pkgAndName = os.Args[1]
-	)
+	pkgAndName := os.Args[1]
 
-	pair := strings.Split(pkgAndName, ".")
-	if len(pair) != 2 {
+	n := strings.LastIndex(pkgAndName, ".")
+	if n == -1 {
 		log.Fatal("usage: switchgen <pkg>.<name>")
 	}
 
 	var (
-		pkgName = pair[0]
-		name    = pair[1]
+		pkgName = pkgAndName[0:n]
+		name    = pkgAndName[n+1:]
 	)
 
 	conf := loader.Config{}
