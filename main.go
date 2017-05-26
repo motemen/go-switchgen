@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"go/importer"
 	"go/types"
-	"golang.org/x/tools/go/loader"
 )
 
 func main() {
@@ -28,16 +28,12 @@ func main() {
 		name    = pkgAndName[n+1:]
 	)
 
-	conf := loader.Config{}
-	conf.FromArgs([]string{pkgName}, false)
-	prog, err := conf.Load()
+	pkg, err := importer.Default().Import(pkgName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	pkg := prog.Package(pkgName)
-
-	scope := pkg.Pkg.Scope()
+	scope := pkg.Scope()
 	baseObj := scope.Lookup(name)
 
 	_, ok := baseObj.(*types.TypeName)
