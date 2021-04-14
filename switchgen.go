@@ -10,12 +10,23 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-type Cases []string
+type Switch struct {
+	IsType bool
+	Cases  []string
+}
 
-func (cc Cases) String() string {
+func (s *Switch) AppendCase(item string) {
+	s.Cases = append(s.Cases, item)
+}
+
+func (s *Switch) String() string {
 	var b strings.Builder
-	b.WriteString("switch {\n")
-	for _, c := range cc {
+	b.WriteString("switch _")
+	if s.IsType {
+		b.WriteString(".(type)")
+	}
+	b.WriteString(" {\n")
+	for _, c := range s.Cases {
 		b.WriteString("case ")
 		b.WriteString(c)
 		b.WriteString(":\n")
@@ -38,7 +49,7 @@ func (ee Errors) Error() string {
 	return b.String()
 }
 
-func Generate(pkgName, name string) (Cases, error) {
+func Generate(pkgName, name string) (*Switch, error) {
 	conf := &packages.Config{
 		Mode: packages.NeedTypes | packages.NeedTypesInfo,
 	}
@@ -56,6 +67,9 @@ func Generate(pkgName, name string) (Cases, error) {
 
 	scope := pkg.Types.Scope()
 	baseObj := scope.Lookup(name)
+	if baseObj == nil {
+		return nil, fmt.Errorf("could not find %s in package %q", name, pkgName)
+	}
 
 	_, ok := baseObj.(*types.TypeName)
 	if !ok {
@@ -64,7 +78,9 @@ func Generate(pkgName, name string) (Cases, error) {
 
 	baseInterface, isInterface := baseObj.Type().(*types.Named).Underlying().(*types.Interface)
 
-	cases := Cases{}
+	sw := &Switch{
+		IsType: isInterface,
+	}
 
 	typ := baseObj.Type()
 	for _, name := range scope.Names() {
@@ -76,18 +92,19 @@ func Generate(pkgName, name string) (Cases, error) {
 			continue
 		}
 
-		if isInterface {
+		name := fmt.Sprintf("%s.%s", obj.Pkg().Name(), obj.Name())
+		if sw.IsType {
 			if types.Implements(obj.Type(), baseInterface) {
-				cases = append(cases, fmt.Sprintf("%s.%s", obj.Pkg().Name(), obj.Name()))
+				sw.AppendCase(name)
 			} else if types.Implements(types.NewPointer(obj.Type()), baseInterface) {
-				cases = append(cases, fmt.Sprintf("*%s.%s", obj.Pkg().Name(), obj.Name()))
+				sw.AppendCase("*" + name)
 			}
 		} else {
 			if obj.Type() == typ {
-				cases = append(cases, fmt.Sprintf("%s.%s", obj.Pkg().Name(), obj.Name()))
+				sw.AppendCase(name)
 			}
 		}
 	}
 
-	return cases, nil
+	return sw, nil
 }

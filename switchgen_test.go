@@ -9,7 +9,7 @@ func TestGenerate(t *testing.T) {
 		code string
 	}{
 		{
-			"reflect", "Kind", `switch {
+			"reflect", "Kind", `switch _ {
 case reflect.Array:
 case reflect.Bool:
 case reflect.Chan:
@@ -38,9 +38,10 @@ case reflect.Uint8:
 case reflect.Uintptr:
 case reflect.UnsafePointer:
 }
-`},
+`,
+		},
 		{
-			"go/ast", "Node", `switch {
+			"go/ast", "Node", `switch _.(type) {
 case *ast.ArrayType:
 case *ast.AssignStmt:
 case *ast.BadDecl:
@@ -101,7 +102,29 @@ case *ast.TypeSwitchStmt:
 case *ast.UnaryExpr:
 case *ast.ValueSpec:
 }
-`},
+`,
+		},
+		{
+			"golang.org/x/tools/go/packages", "LoadMode", `switch _ {
+case packages.LoadAllSyntax:
+case packages.LoadFiles:
+case packages.LoadImports:
+case packages.LoadSyntax:
+case packages.LoadTypes:
+case packages.NeedCompiledGoFiles:
+case packages.NeedDeps:
+case packages.NeedExportsFile:
+case packages.NeedFiles:
+case packages.NeedImports:
+case packages.NeedModule:
+case packages.NeedName:
+case packages.NeedSyntax:
+case packages.NeedTypes:
+case packages.NeedTypesInfo:
+case packages.NeedTypesSizes:
+}
+`,
+		},
 	}
 
 	for _, test := range tests {
